@@ -1,5 +1,6 @@
 ﻿using Core.DataAccess;
 using Entities.Concrete;
+using Entities.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,9 @@ namespace DataAccess.Abstract
 {
     public interface IProductDal : IEntityRepository<Product>
     {
+
+        List<ProductDetailDto> GetProductDetails();
+
         //// Ben ürün Listeleyeceğim mesela:
         //// Product Tablomu kullanacağım için ki bu da farklı bir katmanda:
         //// Bundan dolayı Referans ekliyoruz.
@@ -26,6 +30,8 @@ namespace DataAccess.Abstract
         //void Delete(Product product);
 
         //List<Product> GetAllByCategory(int categoryId);
+
+
 
     }
 }

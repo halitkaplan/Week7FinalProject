@@ -1,5 +1,7 @@
-﻿using DataAccess.Abstract;
+﻿using Core.DataAccess.EntityFramework;
+using DataAccess.Abstract;
 using Entities.Concrete;
+using Entities.DTOs;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,60 +12,27 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Concrete.EntityFramework
 {
-    public class EfProductDal : IProductDal
+    public class EfProductDal : EfEntityRepositoryBase<Product, NorthwindContext>, IProductDal
     {
-        public void Add(Product entity)
+        public List<ProductDetailDto> GetProductDetails()
         {
-            // bir Class'ı newlediğimiz zaman, using içine yazdığımız nesneler, işi bittikten
-            // sonra hemen atıcak. Contextler bellek için biraz zorlayıcı.
-            //IDispsable patters implementation
-            using (NorthwindContext context = new NorthwindContext())
+            using (NorthwindContext context = new NorthwindContext())   // join atacağım için 
             {
-                // using bittiği an, garbagecollectöre gidiyor ve belleği hızlıca temizliyor.
-                var addedEntity = context.Entry(entity);    // referansı yakala
-                addedEntity.State = EntityState.Added;      // o eklenecek bir nesne
-                context.SaveChanges();                      // değişiklikleri kaydet.
+                var result = from p in context.Products             // context bizim tablomuza karşılık geliyor.
+                             join c in context.Categories           // ürünlerle categorileri join ediyor.
+                             on p.CategoryId equals c.CategoryId    // p de ki categoryId ile, c de ki categoryId eşitse, ürünlerle kategorileri join et
+                             select new ProductDetailDto 
+                             {
+                                 ProductId=p.ProductId, 
+                                 ProductName=p.ProductName, 
+                                 CategoryName=c.CategoryName, 
+                                 UnitsInStock=p.UnitsInStock 
+                             };       // Hangi kolonları istiyorsak; Yani sonucu şu kolonlara uydurarak ver.
+
+                return result.ToList(); // result, bir döngü türü. IQUerable. 
             }
-        }
-
-        public void Delete(Product entity)
-        {
-            using (NorthwindContext context = new NorthwindContext())
-            {
-                
-                var deletedEntity = context.Entry(entity);    // referansı yakala
-                deletedEntity.State = EntityState.Deleted;      // o silinecek bir nesne
-                context.SaveChanges();                      // değişiklikleri kaydet.
-            }
-        }
-
-        public Product Get(Expression<Func<Product, bool>> filter)  // bu tek data getiriyor.
-        {
-            using (NorthwindContext context = new NorthwindContext())
-            {
-                return context.Set<Product>().SingleOrDefault(filter); // bu filtreyi, o referansa uyguluyorum ve tek bir datayı getiriyor bana. 
-                                                                       // Datayı da referanstan buluyordu zaten.
-            }
-        }
-
-        public List<Product> GetAll(Expression<Func<Product, bool>> filter = null)
-        {
-            using (NorthwindContext context = new NorthwindContext())
-            {
-                //     filter == null'mı? Null ise, veritabanındaki product tablosunu listeye çevir ve bana döndür. : Değilse, filtreleyip listele. 
-                return filter == null ? context.Set<Product>().ToList() : context.Set<Product>().Where(filter).ToList();
-            } 
-        }
-
-        public void Update(Product entity)
-        {
-            using (NorthwindContext context = new NorthwindContext())
-            {
-
-                var updatedEntity = context.Entry(entity);      // referansı yakala
-                updatedEntity.State = EntityState.Modified;     // o güncellenecek bir nesne
-                context.SaveChanges();                          // değişiklikleri kaydet.
-            }
+            
         }
     }
 }
+
