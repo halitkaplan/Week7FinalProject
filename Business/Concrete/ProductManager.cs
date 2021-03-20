@@ -1,4 +1,6 @@
 ﻿using Business.Abstract;
+using Business.Constants;
+using Core.Utilities.Results;
 using DataAccess.Abstract;
 using DataAccess.Concrete.InMemory;
 using Entities.Concrete;
@@ -22,50 +24,55 @@ namespace Business.Concrete
             _productDal = productDal;
         }
 
+        public IResult Add(Product product) 
+        {
+            // Ürünü eklemeden önce kodlar varsa yani şartlar varsa buraya yazılır.
+
+            if (product.ProductName.Length<2)
+            {
+                return new ErrorResult(Messages.ProductNameInvalid);
+            }
+            _productDal.Add(product);
+           
+            return new SuccessResult(Messages.ProductAdded); // bunu yapabilmenin yöntemi Constructor'dur.
+        }
+
         // bu ne demek: ProductManager Newlendiği zaman, IProductDal referans ver diyor. Bu InMemory olabilir, entitiy olabiilir..
 
-        public List<Product> GetAll()
+        public IDataResult<List<Product>> GetAll()
         {
-            // İş Kodları [Tümünü listeleme çalışıyor ama yetkisi var mı gibi ...]
+            if (DateTime.Now.Hour==16)
+            {
+                return new ErrorDataResult<List<Product>>(Messages.MaintenanceTime);
+            }
 
-
-            // Veri, iş kodlarından geçiyorsa eğer, Veriye erişimi çağırmam lazım. İş kodları derken: Mesela
-            /*  Bir satıcı, ayda en fazla 10 ürün satabilsin.  ya da alıcı, aynı anda 2 ürün satın alabilsin.
-             *  Bu kişi ürün satabilmek için şartları sağlıyor mu? ya da satın alabilmek için
-             *   Eğer Şartları sağlıyorsa, Veriye erişim katmanını çağıracağız. Şöyle ki:
-             */
-
-            // InMemoryProductDal ınMemoryProductDal = new InMemoryProductDal();
-
-            // Ben burayı böyle yazdığım zaman, Benim kodlarım InMemory ile çalışır.
-            // Farklı bir veritabanına geçeceğim zaman, tüm veriye erişimleri değiştirmem gerekiyor.
-            // bir iş sınıfı farklı bir sınıfı newleyemek gibi bir kuralımız var.
-            // bunun için şöyle bir şey yapıyoruz. injection: 
-
-
-            // Yukarıdaki injectionu oluşturduktan sonra:
-
-            return _productDal.GetAll();
-           
+            return new SuccessDataResult<List<Product>>( _productDal.GetAll(),Messages.ProductsListed); 
             
-
-
         }
 
-        public List<Product> GetAllByCategoryId(int id)
+        public IDataResult<List<Product>> GetAllByCategoryId(int id)
         {
-            return _productDal.GetAll(p => p.CategoryId == id);
+            return new SuccessDataResult<List<Product>>( _productDal.GetAll(p => p.CategoryId == id));
             // GetAll() yaptığımda uyarı ekranı olarak bana bir Expression ver diyor program. Yani bana bir lamda ver diyor. => (lamda)
         }
-
-        public List<Product> GetByUnitPrice(decimal min, decimal max)
+        
+        public IDataResult<Product> GetById(int productId)
         {
-            return _productDal.GetAll(p => p.UnitPrice >= min && p.UnitPrice <= max);
+            return new SuccessDataResult<Product>( _productDal.Get(p=>p.ProductId == productId));
         }
 
-        public List<ProductDetailDto> GetProductDetails()
+        public IDataResult<List<Product>> GetByUnitPrice(decimal min, decimal max)
         {
-            return _productDal.GetProductDetails();
+            return new SuccessDataResult<List<Product>>( _productDal.GetAll(p => p.UnitPrice >= min && p.UnitPrice <= max));
+        }
+
+        public IDataResult<List<ProductDetailDto>> GetProductDetails()
+        {
+            // if (DateTime.Now.Hour == 16)
+            // {
+            //    return new ErrorDataResult<List<ProductDetailDto>>(Messages.MaintenanceTime);
+            // }
+            return new SuccessDataResult<List<ProductDetailDto>>(_productDal.GetProductDetails());
         }
     }
 }
