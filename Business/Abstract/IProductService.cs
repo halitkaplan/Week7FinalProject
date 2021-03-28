@@ -27,7 +27,9 @@ namespace Business.Abstract
                                         // o ürüne ait tüm bilgileri gösteriyor bize.
 
         IResult Add(Product product); 
-        IResult Update(Product product); 
+        IResult Update(Product product);
 
+        IResult AddTransactionalTest(Product product);
+       
     }
 }
